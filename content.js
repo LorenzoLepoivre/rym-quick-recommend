@@ -56,11 +56,15 @@ if (!document.getElementById("rym-reco-btn")) {
     }
 
     btn.onclick = () => {
-        const username = prompt("À qui recommander ?");
-        if (!username) return;
+        let username = null;
+        while (!username) {
+            username = prompt("À qui recommander ?");
+        }
 
-        const message = prompt("Message ?");
-        if (!message) message = "";
+        let message = null;
+        while (!message) {
+            message = prompt("Message ?");
+        }
 
         const assocId = getAssocId();
         if (!assocId) {
