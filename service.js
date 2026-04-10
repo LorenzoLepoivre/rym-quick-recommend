@@ -1,5 +1,4 @@
-export function sendRecommendation(username, assocId, message) {
-
+async function sendRecommendation(username, assocId, message) {
     const formData = new URLSearchParams();
 
     formData.append("rece", username);
@@ -7,7 +6,7 @@ export function sendRecommendation(username, assocId, message) {
     formData.append("assoc_id", assocId);
     formData.append("reason", message);
 
-    return fetch("https://rateyourmusic.com/recommend/rec_2", {
+    const response = await fetch("https://rateyourmusic.com/recommend/rec_2", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -15,10 +14,15 @@ export function sendRecommendation(username, assocId, message) {
         },
         body: formData.toString()
     });
+
+    if (!response.ok) {
+        return { success: false, error: `HTTP error! status: ${response.status}` };
+    }
+
+    return { success: true };
 }
 
-export async function fetchFriends(username) {
-
+async function fetchFriends(username) {
     if (!username) return [];
 
     try {
@@ -45,11 +49,31 @@ export async function fetchFriends(username) {
             .map(href => href.replace("/~", ""))
             .filter(Boolean);
 
-        // 🧼 remove duplicates
+        // remove duplicates
         return [...new Set(usernames)];
 
     } catch (err) {
         console.error("fetchFriends error:", err);
         return [];
     }
+}
+
+async function searchUsers(query) {
+    if (!query || query.trim().length === 0) return [];
+
+    const res = await fetch(
+        `https://rateyourmusic.com/api/1/search/autocomplete?searchterm=${encodeURIComponent(query)}&searchtype=u`,
+        {
+            credentials: "include",
+            headers: {
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        }
+    );
+
+    const data = await res.json();
+
+    return (data || []);
 }

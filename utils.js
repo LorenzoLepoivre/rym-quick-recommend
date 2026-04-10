@@ -1,7 +1,6 @@
-export function getAssocId() {
-
+function getAssocId() {
     try {
-        const match = window.location.href.match(/\/release\/album\/.*\/(\d+)/);
+        const match = window.location.href.match(/\/release\/.*\/(\d+)/);
         if (match?.[1]) return match[1];
 
         const html = document.body?.innerHTML || "";
@@ -17,8 +16,7 @@ export function getAssocId() {
     }
 }
 
-export function getCurrentUsername() {
-
+function getCurrentUsername() {
     try {
         const link = document.querySelector("a[href^='/~']");
         const href = link?.getAttribute("href");
@@ -33,4 +31,13 @@ export function getCurrentUsername() {
         console.error("getCurrentUsername error:", err);
         return null;
     }
+}
+
+function debounce(fn, delay = 300) {
+    let timeout;
+
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), delay);
+    };
 }

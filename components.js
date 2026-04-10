@@ -1,17 +1,14 @@
-export function createButton(onClick) {
+function createButton(onClick) {
     const btn = document.createElement("div");
     btn.id = "rym-reco-btn";
     btn.className = "track_rating_btn";
-    btn.innerText = "Recommander";
-
+    btn.innerText = "Recommend";
     btn.onclick = onClick;
 
     return btn;
 }
 
-export function createFriendSelector(friends, onSubmit, onCancel) {
-
-    // ❌ évite doublons UI
+function createFriendSelector(friends, onSubmit, onCancel) {
     const existing = document.getElementById("rym-friend-selector");
     if (existing) existing.remove();
 
@@ -22,65 +19,136 @@ export function createFriendSelector(friends, onSubmit, onCancel) {
         <div class="rym-box">
             <h3>Recommend to:</h3>
 
-            <div class="rym-list"></div>
+            <input type="text" class="rym-search" placeholder="Search friends or users..." />
 
-            <textarea 
-                placeholder="Message..." 
-                class="rym-message"
-            ></textarea>
+            <div class="rym-selected"></div>
+            <div class="rym-friends"></div>
+            <div class="rym-users"></div>
+
+            <textarea placeholder="Message..." class="rym-message"></textarea>
 
             <div class="rym-actions">
-                <button class="rym-send">Send</button>
                 <button class="rym-cancel">Cancel</button>
+                <button class="rym-send">Send</button>
             </div>
         </div>
     `;
 
-    const list = wrapper.querySelector(".rym-list");
+    const selectedBox = wrapper.querySelector(".rym-selected");
+    const friendsBox = wrapper.querySelector(".rym-friends");
+    const usersBox = wrapper.querySelector(".rym-users");
+    const searchInput = wrapper.querySelector(".rym-search");
 
-    // 🔥 safer + compatible
-    Array.from(friends).forEach(friend => {
-        const item = document.createElement("label");
-        item.className = "rym-item";
+    const selectedSet = new Set();
 
-        item.innerHTML = `
-            <input type="checkbox" value="${friend}">
-            <span>${friend}</span>
-        `;
+    let currentFriends = friends;
+    let currentUsers = [];
 
-        list.appendChild(item);
-    });
+    // =========================
+    // CHECKBOX ITEM
+    // =========================
+    function createItem(name) {
+        const label = document.createElement("label");
+        label.className = "rym-item";
 
-    // 🚀 SEND
-    wrapper.querySelector(".rym-send").onclick = () => {
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = name;
+        input.checked = selectedSet.has(name);
 
-        const selected = Array.from(
-            wrapper.querySelectorAll("input:checked")
-        ).map(i => i.value);
+        const span = document.createElement("span");
+        span.textContent = name;
 
-        const message = wrapper.querySelector(".rym-message").value.trim();
+        input.addEventListener("change", () => {
+            if (input.checked) selectedSet.add(name);
+            else selectedSet.delete(name);
 
-        if (!selected.length) {
-            alert("Select at least one friend");
+            render();
+        });
+
+        label.appendChild(input);
+        label.appendChild(span);
+
+        return label;
+    }
+
+    // =========================
+    // SECTION RENDER
+    // =========================
+    function renderSection(container, title, items) {
+        container.innerHTML = "";
+
+        const t = document.createElement("div");
+        t.textContent = `${title} (${items.length})`;
+        t.style.fontWeight = "bold";
+        t.style.marginTop = "10px";
+        container.appendChild(t);
+
+        items.forEach(name => {
+            container.appendChild(createItem(name));
+        });
+    }
+
+    // =========================
+    // MAIN RENDER
+    // =========================
+    function render() {
+        renderSection(
+            selectedBox,
+            "Selected",
+            Array.from(selectedSet)
+        );
+        renderSection(friendsBox, "Friends", currentFriends);
+        renderSection(usersBox, "Other users", currentUsers);
+    }
+
+    render();
+
+    // =========================
+    // SEARCH
+    // =========================
+    searchInput.addEventListener("input", debounce(async (e) => {
+        const value = e.target.value.trim().toLowerCase();
+
+        if (!value) {
+            currentFriends = friends;
+            currentUsers = [];
+            render();
             return;
         }
 
-        if (!message) {
-            alert("Enter a message");
+        currentFriends = friends.filter(f =>
+            f.toLowerCase().includes(value)
+        );
+
+        currentUsers = await searchUsers(value);
+
+        render();
+    }, 300));
+
+    // =========================
+    // SEND
+    // =========================
+    wrapper.querySelector(".rym-send").onclick = () => {
+        const message = wrapper.querySelector(".rym-message").value.trim();
+        const selected = Array.from(selectedSet);
+
+        if (!selected.length) {
+            alert("Select at least one user");
             return;
         }
 
         onSubmit(selected, message);
-
         wrapper.remove();
     };
 
-    // ❌ CANCEL
+    // =========================
+    // CANCEL
+    // =========================
     wrapper.querySelector(".rym-cancel").onclick = () => {
         wrapper.remove();
         if (onCancel) onCancel();
     };
 
-    // 🧼 safety: avoid multiple mounts
     document.body.appendChild(wrapper);
 }

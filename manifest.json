@@ -2,14 +2,14 @@
   "manifest_version": 3,
   "name": "RYM Quick Recommend",
   "version": "2.0.0",
-  "description": "Recommander un album directement depuis la page",
+  "description": "Recommend albums to your friends on RateYourMusic with a single click.",
 
   "permissions": ["activeTab"],
 
   "content_scripts": [
     {
       "matches": [
-        "https://rateyourmusic.com/release/album/*"
+        "https://rateyourmusic.com/release/*"
       ],
       "js": [
         "utils.js",
